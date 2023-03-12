@@ -8,6 +8,10 @@ import json
 import importlib
 import multiprocessing
 
+import traceback
+import uuid
+import os
+
 sys.path.append("../scripts")
 #
 
@@ -19,22 +23,35 @@ def run_script(payload_dict):
     entrance_func_name = payload_dict.get("entrance_func")
     code = payload_dict.get("code")
 
-    exec(code, globals())
+    code_file_name=f"c0dE_{str(uuid.uuid1())}"
 
-    execute_func = globals()[entrance_func_name]
-    execute_result = execute_func()
-    return execute_result
+    with open(f"../scripts/{code_file_name}.py", "w") as fd:
+        fd.write(code)
+    try:
+      module = importlib.import_module(code_file_name)
+
+      execute_func = getattr(module, entrance_func_name, None)
+      execute_result = execute_func()
+      return execute_result
+    except Exception as e:
+      raise Exception("代码执行出错！")
+    finally:
+      os.remove(f"../scripts/{code_file_name}.py")
+    
+    
 
 
 # 编写路由，构建url与函数的映射关系（将函数与url绑定）
 @app.route("/execute", methods=["POST"])
 def users():
     payload_dict = json.loads(request.data.decode("utf-8"))
-
-    p = pool.apply_async(run_script, (payload_dict,))
-    execute_result = p.get()
-
-    return jsonify({"code": 10000, "message": "success", "result": execute_result})
+    try:
+      p = pool.apply_async(run_script, (payload_dict,))
+      execute_result = p.get()
+      return jsonify({"code": 0, "message": "success", "result": execute_result})
+    except Exception as e:
+      return jsonify({"code": 1, "message": "fail", "result": traceback.format_exc()})
+    
 
 
 if __name__ == '__main__':
@@ -45,7 +62,7 @@ if __name__ == '__main__':
 
     app.config['JSON_AS_ASCII'] = False
     # 以调试模式启动,host=0.0.0.0 ,则可以使用127.0.0.1、localhost以及本机ip来访问
-    app.run(host="0.0.0.0", port=8899, debug=True)
+    app.run(host="0.0.0.0", port=8899, debug=False)
 
 '''
 import requests
