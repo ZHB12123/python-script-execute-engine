@@ -6,9 +6,14 @@
     <n-grid-item :span="4">
       <n-card>
         <n-space vertical>
-          <n-button type="success" @click="runCode"> RUN </n-button>
+          <n-button type="success" @click="runCode" :disabled="runCodeButtonDisable">
+            RUN
+          </n-button>
           <n-card title="运行结果">
-            <n-code :code="code" language="json" word-wrap />
+            <n-spin :show="spinShow">
+              <n-code :code="code" language="json" word-wrap />
+              <template #description> 脚本运行中...... </template>
+            </n-spin>
           </n-card>
         </n-space>
       </n-card>
@@ -20,15 +25,16 @@
 import axios from "axios";
 import { defineComponent, ref } from "vue";
 
-import { NGrid, NGridItem, NButton, NSpace, NCard, NCode } from "naive-ui";
+import { NGrid, NGridItem, NButton, NSpace, NCard, NCode, NSpin } from "naive-ui";
 
 import CodeEditor from "./CodeEditor.vue";
 
 export default defineComponent({
-  components: { CodeEditor, NGrid, NGridItem, NButton, NSpace, NCard, NCode },
+  components: { CodeEditor, NGrid, NGridItem, NButton, NSpace, NCard, NCode, NSpin },
   setup() {
     return {
-      a: ref(null),
+      runCodeButtonDisable: ref(false),
+      spinShow: ref(false),
     };
   },
   data() {
@@ -54,13 +60,19 @@ export default defineComponent({
         entrance_func: "main",
         code: value,
       };
+      this.runCodeButtonDisable = true;
+      this.spinShow = true;
       axios
         .post("/execute", params)
         .then((response) => {
           this.code = JSON.stringify(response.data, null, 2);
+          this.runCodeButtonDisable = false;
+          this.spinShow = false;
         })
         .catch(function (error) {
           console.log(error);
+          this.runCodeButtonDisable = false;
+          this.spinShow = false;
         });
     },
   },
