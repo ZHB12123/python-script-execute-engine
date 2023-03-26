@@ -23,6 +23,14 @@ const routes = [
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "about" */ '../views/RunFluent.vue')
   },
+  {
+    path: '/run_module',
+    name: 'run_module',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "about" */ '../views/RunModule.vue')
+  },
 ]
 
 const router = createRouter({

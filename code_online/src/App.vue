@@ -81,6 +81,11 @@ export default defineComponent({
           disabled: false,
         },
         {
+          label: "运行模块",
+          key: "run_module",
+          disabled: false,
+        },
+        {
           label: "流式函数订阅",
           key: "run_fluent",
           disabled: false,
@@ -114,6 +119,9 @@ export default defineComponent({
       }
       if (key == "run_once") {
         this.$router.push({ path: "/run_once" });
+      }
+      if (key == "run_module") {
+        this.$router.push({ path: "/run_module" });
       }
     },
   },
