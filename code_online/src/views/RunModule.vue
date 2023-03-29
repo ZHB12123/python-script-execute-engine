@@ -1,12 +1,7 @@
 <template>
   <n-grid x-gap="12" :cols="10">
     <n-grid-item :span="6">
-      <n-upload
-        multiple
-        directory-dnd
-        action="https://www.mocky.io/v2/5e4bafc63100007100d8b70f"
-        :max="5"
-      >
+      <n-upload multiple directory-dnd action="/upload_module" :max="5">
         <n-upload-dragger>
           <div style="margin-bottom: 12px">
             <n-icon size="48" :depth="3">
