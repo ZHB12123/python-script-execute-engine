@@ -1,6 +1,6 @@
 /.idea
 /script_execute_engine/.idea
 /.vscode
-
+/code_online/.vscode
 
 *.pyc

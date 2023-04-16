@@ -4,6 +4,7 @@ from flask import jsonify
 from flask import request
 
 import sys
+import os
 import json
 import multiprocessing
 import traceback
@@ -52,6 +53,7 @@ type_dict = {
     b'44656C69766572792D646174653A': 'eml'
 }
 
+
 @app.route("/execute", methods=["POST"])
 def execute():
     payload_dict = json.loads(request.data.decode("utf-8"))
@@ -76,34 +78,39 @@ def execute():
     except Exception as e:
         return jsonify({"code": 1, "message": "fail", "result": traceback.format_exc()})
 
-@app.route("/upload_module",methods=["POST"])
+
+@app.route("/upload_module", methods=["POST"])
 def upload_module():
-    file_upload=request.files["file"]
+    file_upload = request.files["file"]
     # 判断文件格式是否为.zip
-    data=file_upload.stream.read(1024*1024*10+1)
-    if len(data)>1024*1024*10:
+    data = file_upload.stream.read(1024 * 1024 * 10 + 1)
+    if len(data) > 1024 * 1024 * 10:
         return "上传的文件太大了！"
-    
-    if binascii.hexlify(data[:4]).upper()!=b'504B0304':
+
+    if binascii.hexlify(data[:4]).upper() != b'504B0304':
         return "上传文件格式错误！"
-    
-    file_path = "../modules/"+file_upload.filename
-    with open(file_path,"wb") as fd:
+
+    file_path = "../modules/" + file_upload.filename
+    with open(file_path, "wb") as fd:
         fd.write(data)
 
-    zip_file=zipfile.ZipFile(file_path)
-    timestamp=int(time.time())
+    zip_file = zipfile.ZipFile(file_path)
+    timestamp = int(time.time())
     for file in zip_file.namelist():
-        zip_file.extract(file,f"../modules/{file_upload.filename}_{timestamp}")
+        zip_file.extract(file, f"../modules/{file_upload.filename}_{timestamp}")
     zip_file.close()
 
     return "upload success!"
+
 
 if __name__ == '__main__':
     # 默认方式启动
     # app.run()
     # 解决jsonify中文乱码问题
-    # multiprocessing.set_start_method("fork")
+    if os.name == "nt":
+        multiprocessing.set_start_method("spawn")
+    if os.name == "posix":
+        multiprocessing.set_start_method("fork")
 
     app.config['JSON_AS_ASCII'] = False
     # 以调试模式启动,host=0.0.0.0 ,则可以使用127.0.0.1、localhost以及本机ip来访问
