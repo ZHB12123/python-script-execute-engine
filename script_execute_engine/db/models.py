@@ -13,7 +13,7 @@ class Modules(Base):
     package_name = Column(String(1024))
     enter_func = Column(String(64))
     params = Column(TEXT)
-    module_path = Column(String(256), nullable=False)
+    package_path = Column(String(256), nullable=False)
 
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")

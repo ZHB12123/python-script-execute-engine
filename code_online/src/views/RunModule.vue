@@ -123,8 +123,24 @@ import {
   NCard,
 } from "naive-ui";
 
-const createColumns = (renew, run) => {
+const createColumns = (renew, run, deletePackage) => {
   return [
+    {
+      title: "删除",
+      key: "renew_info",
+      render(row) {
+        return createVNode(
+          NButton,
+          {
+            size: "small",
+            type: "warning",
+            circle: true,
+            onClick: () => deletePackage(row),
+          },
+          { default: () => "X" }
+        );
+      },
+    },
     {
       title: "压缩包名",
       key: "name",
@@ -240,7 +256,7 @@ export default defineComponent({
       file: null,
       upload_action: null,
       data,
-      columns: createColumns(this.renew, this.run),
+      columns: createColumns(this.renew, this.run, this.deletePackage),
       run_data: {
         package_name: null,
         enter_func: null,
@@ -305,6 +321,9 @@ export default defineComponent({
         .catch((error) => {
           console.log(error);
         });
+    },
+    deletePackage(row) {
+      console.log(row);
     },
     renew(row) {
       this.run_data.package_name = row.package_name;
