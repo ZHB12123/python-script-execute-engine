@@ -87,7 +87,8 @@ def upload_module():
         "enter_func": request.form["enter_func"],
         "params": request.form["params"],
         "name": file_upload.filename,
-        "upload_time": datetime.now()
+        "upload_time": datetime.now(),
+        "module_path": f"{file_upload.filename}_{timestamp}"
     }
     ModulesDao.insert(module_info)
 

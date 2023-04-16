@@ -1,7 +1,6 @@
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime, TEXT
 
-
 Base = declarative_base()
 
 
@@ -9,11 +8,12 @@ class Modules(Base):
     __tablename__ = "modules"
 
     id = Column(Integer, autoincrement=True, primary_key=True)
-    name = Column(String(64), unique=False)
+    name = Column(String(64), unique=False, nullable=False)
     upload_time = Column(DateTime)
     package_name = Column(String(1024))
     enter_func = Column(String(64))
     params = Column(TEXT)
+    module_path = Column(String(256), nullable=False)
 
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
