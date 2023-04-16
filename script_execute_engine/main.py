@@ -11,47 +11,18 @@ import traceback
 import zipfile
 import binascii
 import time
+from datetime import datetime
 
 import run_script
+
+from db.dao import ModulesDao
 
 sys.path.append("../scripts")
 sys.path.append("../modules")
 
-app = Flask(__name__)
+ModulesDao.create_table()
 
-type_dict = {
-    b'424D': 'bmp',
-    b'FFD8FF': 'jpg',
-    b'2E524D46': 'rm',
-    b'4D546864': 'mid',
-    b'89504E47': 'png',
-    b'47494638': 'gif',
-    b'49492A00': 'tif',
-    b'41433130': 'dwg',
-    b'38425053': 'psd',
-    b'2142444E': 'pst',
-    b'FF575043': 'wpd',
-    b'AC9EBD8F': 'qdf',
-    b'E3828596': 'pwl',
-    b'504B0304': 'zip',
-    b'52617221': 'rar',
-    b'57415645': 'wav',
-    b'41564920': 'avi',
-    b'2E7261FD': 'ram',
-    b'000001BA': 'mpg',
-    b'000001B3': 'mpg',
-    b'6D6F6F76': 'mov',
-    b'7B5C727466': 'rtf',
-    b'3C3F786D6C': 'xml',
-    b'68746D6C3E': 'html',
-    b'D0CF11E0': 'doc/xls',
-    b'255044462D312E': 'pdf',
-    b'CFAD12FEC5FD746F': 'dbx',
-    b'3026B2758E66CF11': 'asf',
-    b'5374616E64617264204A': 'mdb',
-    b'252150532D41646F6265': 'ps/eps',
-    b'44656C69766572792D646174653A': 'eml'
-}
+app = Flask(__name__)
 
 
 @app.route("/execute", methods=["POST"])
@@ -79,6 +50,15 @@ def execute():
         return jsonify({"code": 1, "message": "fail", "result": traceback.format_exc()})
 
 
+@app.route("/run_module", methods=["POST"])
+def run_module():
+    payload_dict = json.loads(request.data.decode("utf-8"))
+    try:
+        pass
+    except Exception as e:
+        pass
+
+
 @app.route("/upload_module", methods=["POST"])
 def upload_module():
     file_upload = request.files["file"]
@@ -100,13 +80,26 @@ def upload_module():
         zip_file.extract(file, f"../modules/{file_upload.filename}_{timestamp}")
     zip_file.close()
 
+    os.remove(file_path)
+
+    module_info = {
+        "package_name": request.form["package_name"],
+        "enter_func": request.form["enter_func"],
+        "params": request.form["params"],
+        "name": file_upload.filename,
+        "upload_time": datetime.now()
+    }
+    ModulesDao.insert(module_info)
+
     return "upload success!"
 
 
+@app.route("/query_all_modules", methods=["GET"])
+def query_all_modules():
+    return jsonify(ModulesDao.query_all())
+
+
 if __name__ == '__main__':
-    # 默认方式启动
-    # app.run()
-    # 解决jsonify中文乱码问题
     if os.name == "nt":
         multiprocessing.set_start_method("spawn")
     if os.name == "posix":
