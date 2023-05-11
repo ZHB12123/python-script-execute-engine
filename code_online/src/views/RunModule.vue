@@ -283,7 +283,7 @@ export default defineComponent({
 
       params.append("package_name", this.run_data.package_name);
       params.append("enter_func", this.run_data.enter_func);
-      params.append("params", this.run_data.enter_func);
+      params.append("params", this.run_data.params);
 
       axios
         .post(action, params, headers)
@@ -344,6 +344,18 @@ export default defineComponent({
     },
     run(row) {
       console.log(row);
+
+      let headers = { "Content-Type": "application/json" };
+      let params = row;
+      axios
+        .post("/run_module", params, headers)
+        .then((response) => {
+          console.log(response.data);
+          //this.queryAll();
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     },
   },
 });

@@ -14,6 +14,7 @@ import time
 from datetime import datetime
 
 import run_script
+import run_module
 
 from db.dao import ModulesDao
 
@@ -26,7 +27,7 @@ app = Flask(__name__)
 
 
 @app.route("/execute", methods=["POST"])
-def execute():
+def execute_script():
     payload_dict = json.loads(request.data.decode("utf-8"))
     try:
         parent_conn, child_conn = multiprocessing.Pipe()
@@ -51,12 +52,28 @@ def execute():
 
 
 @app.route("/run_module", methods=["POST"])
-def run_module():
+def execute_module():
     payload_dict = json.loads(request.data.decode("utf-8"))
     try:
-        pass
+        parent_conn, child_conn = multiprocessing.Pipe()
+        p = multiprocessing.Process(target=run_module.run, args=(payload_dict, child_conn,))
+        p.start()
+        result = parent_conn.recv()
+        execute_result = result.get("result")
+        new_modules = result.get("new_modules")
+        for module_name in new_modules:
+            try:
+                m = __import__(module_name)
+                globals()[module_name] = m
+            except Exception as e:
+                pass
+        p.terminate()
+        p.kill()
+        p.join()
+
+        return jsonify({"code": 0, "message": "success", "result": execute_result})
     except Exception as e:
-        pass
+        return jsonify({"code": 1, "message": "fail", "result": traceback.format_exc()})
 
 
 @app.route("/upload_module", methods=["POST"])
@@ -88,7 +105,7 @@ def upload_module():
         "params": request.form["params"],
         "name": file_upload.filename,
         "upload_time": datetime.now(),
-        "module_path": f"{file_upload.filename}_{timestamp}"
+        "package_path": f"{file_upload.filename}_{timestamp}"
     }
     ModulesDao.insert(module_info)
 

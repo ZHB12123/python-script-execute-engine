@@ -46,7 +46,7 @@ class ModulesDao:
         :param _id:
         :return:
         """
-        line = ModulesDao.session.query(Modules).filter(Modules.name == "cc").first()
+        line = ModulesDao.session.query(Modules).filter(Modules.id == _id).first()
         result = line.__dict__
         result.pop("_sa_instance_state")
         return result
