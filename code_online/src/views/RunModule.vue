@@ -120,6 +120,7 @@ import {
   NForm,
   NFormItem,
   useMessage,
+  useDialog,
   NCard,
 } from "naive-ui";
 
@@ -218,6 +219,7 @@ export default defineComponent({
   },
   setup() {
     const message = useMessage();
+
     const fileListLengthRef = ref(0);
     const uploadRef = ref(null);
     return {
@@ -227,6 +229,7 @@ export default defineComponent({
       error(msg) {
         message.error(msg);
       },
+
       upload: uploadRef,
       fileListLength: fileListLengthRef,
 
@@ -252,17 +255,32 @@ export default defineComponent({
     };
   },
   data() {
+    const dialog = useDialog();
     return {
+      deleteConfirmDialog() {
+        dialog.warning({
+          title: "警告",
+          content: "你确定？",
+          positiveText: "确定",
+          negativeText: "不确定",
+          onPositiveClick: () => {
+            this.deleteConfirm();
+          },
+          onNegativeClick: () => {},
+        });
+      },
       file: null,
       upload_action: null,
       data,
       columns: createColumns(this.renew, this.run, this.deletePackage),
       run_data: {
+        id: null,
         package_name: null,
         enter_func: null,
         params: null,
       },
       selected_row: null,
+      delete_row: null,
     };
   },
   mounted() {
@@ -323,9 +341,22 @@ export default defineComponent({
         });
     },
     deletePackage(row) {
-      console.log(row);
+      this.delete_row = row;
+      this.deleteConfirmDialog();
+    },
+    deleteConfirm() {
+      this.error(this.delete_row.name);
+      axios
+        .delete("/delete_module?id=" + this.delete_row.id)
+        .then((response) => {
+          console.log(response.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     },
     renew(row) {
+      this.run_data.id = row.id;
       this.run_data.package_name = row.package_name;
       this.run_data.enter_func = row.enter_func;
       this.run_data.params = row.params;
@@ -338,9 +369,25 @@ export default defineComponent({
         this.error("必填项未填！");
         return;
       }
-      this.selected_row.package_name = this.run_data.package_name;
-      this.selected_row.enter_func = this.run_data.enter_func;
-      this.selected_row.params = this.run_data.params;
+
+      let headers = { "Content-Type": "application/json" };
+      let params = {
+        id: this.run_data.id,
+        package_name: this.run_data.package_name,
+        enter_func: this.run_data.enter_func,
+        params: this.run_data.params,
+      };
+      axios
+        .post("/update_module_info", params, headers)
+        .then((response) => {
+          console.log(response.data);
+          this.selected_row.package_name = this.run_data.package_name;
+          this.selected_row.enter_func = this.run_data.enter_func;
+          this.selected_row.params = this.run_data.params;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     },
     run(row) {
       console.log(row);

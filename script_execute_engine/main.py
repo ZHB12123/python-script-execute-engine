@@ -112,6 +112,27 @@ def upload_module():
     return "upload success!"
 
 
+@app.route("/update_module_info", methods=["POST"])
+def renew_package_info():
+    payload_dict = json.loads(request.data.decode("utf-8"))
+
+    _id = payload_dict.get("id")
+    module_info = {
+        "package_name": payload_dict.get("package_name"),
+        "enter_func": payload_dict.get("enter_func"),
+        "params": payload_dict.get("params")
+    }
+
+    ModulesDao.update_by_id(_id, module_info)
+    return ""
+
+
+@app.route("/delete_module", methods=["DELETE"])
+def delete_module():
+    _id = request.args["id"]
+    print(_id)
+    return "delete success!"
+
 @app.route("/query_all_modules", methods=["GET"])
 def query_all_modules():
     return jsonify(ModulesDao.query_all())

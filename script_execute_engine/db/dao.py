@@ -69,10 +69,9 @@ class ModulesDao:
         :param module_info:
         :return:
         """
-        module_info_model = Modules()
-        module_info_model.__dict__.update(module_info)
-        ModulesDao.session.add(module_info_model)
+        ModulesDao.session.query(Modules).filter(Modules.id == _id).update(module_info)
         ModulesDao.session.commit()
+
 
 # 执行一次__new__方法
 ModulesDao()
