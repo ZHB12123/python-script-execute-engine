@@ -50,7 +50,14 @@
         />
       </n-space>
     </n-grid-item>
-    <n-grid-item :span="4"></n-grid-item>
+    <n-grid-item :span="4">
+      <n-card title="运行结果">
+        <n-spin :show="spinShow">
+          <n-code :code="code" language="json" word-wrap />
+          <template #description>脚本运行中</template>
+        </n-spin>
+      </n-card>
+    </n-grid-item>
   </n-grid>
   <n-modal
     v-model:show="showModal"
@@ -72,21 +79,21 @@
       <n-form :rules="rules">
         <n-form-item path="package_name" label="模块名">
           <n-input
-            v-model:value="run_data.package_name"
+            v-model:value="run_data_renew.package_name"
             type="text"
             placeholder="请输入模块名"
           />
         </n-form-item>
         <n-form-item path="enter_func" label="入口函数">
           <n-input
-            v-model:value="run_data.enter_func"
+            v-model:value="run_data_renew.enter_func"
             type="text"
             placeholder="请输入入口函数"
           />
         </n-form-item>
         <n-form-item path="params" label="运行参数">
           <n-input
-            v-model:value="run_data.params"
+            v-model:value="run_data_renew.params"
             type="textarea"
             :autosize="{
               minRows: 3,
@@ -122,6 +129,8 @@ import {
   useMessage,
   useDialog,
   NCard,
+  NSpin,
+  NCode,
 } from "naive-ui";
 
 const createColumns = (renew, run, deletePackage) => {
@@ -216,6 +225,8 @@ export default defineComponent({
     NForm,
     NFormItem,
     NCard,
+    NSpin,
+    NCode,
   },
   setup() {
     const message = useMessage();
@@ -223,12 +234,18 @@ export default defineComponent({
     const fileListLengthRef = ref(0);
     const uploadRef = ref(null);
     return {
+      info(msg) {
+        message.info(msg);
+      },
       warning(msg) {
         message.warning(msg);
       },
       error(msg) {
         message.error(msg);
       },
+
+      spinShow: ref(false),
+      code: "",
 
       upload: uploadRef,
       fileListLength: fileListLengthRef,
@@ -238,18 +255,12 @@ export default defineComponent({
       rules: {
         package_name: {
           required: true,
-          message: "请输入姓名",
-          trigger: "blur",
         },
         enter_func: {
           required: true,
-          message: "请输入姓名",
-          trigger: "blur",
         },
         params: {
           required: false,
-          message: "请输入姓名",
-          trigger: "blur",
         },
       },
     };
@@ -274,6 +285,11 @@ export default defineComponent({
       data,
       columns: createColumns(this.renew, this.run, this.deletePackage),
       run_data: {
+        package_name: null,
+        enter_func: null,
+        params: null,
+      },
+      run_data_renew: {
         id: null,
         package_name: null,
         enter_func: null,
@@ -349,61 +365,73 @@ export default defineComponent({
       axios
         .delete("/delete_module?id=" + this.delete_row.id)
         .then((response) => {
-          console.log(response.data);
+          this.info(response.data);
+          this.queryAll();
         })
         .catch((error) => {
           console.log(error);
         });
     },
     renew(row) {
-      this.run_data.id = row.id;
-      this.run_data.package_name = row.package_name;
-      this.run_data.enter_func = row.enter_func;
-      this.run_data.params = row.params;
+      this.run_data_renew.id = row.id;
+      this.run_data_renew.package_name = row.package_name;
+      this.run_data_renew.enter_func = row.enter_func;
+      this.run_data_renew.params = row.params;
       console.log(row);
       this.showModal = true;
       this.selected_row = row;
     },
     renewConfirm() {
-      if (!this.run_data.package_name || !this.run_data.enter_func) {
+      if (!this.run_data_renew.package_name || !this.run_data_renew.enter_func) {
         this.error("必填项未填！");
         return;
       }
 
       let headers = { "Content-Type": "application/json" };
       let params = {
-        id: this.run_data.id,
-        package_name: this.run_data.package_name,
-        enter_func: this.run_data.enter_func,
-        params: this.run_data.params,
+        id: this.run_data_renew.id,
+        package_name: this.run_data_renew.package_name,
+        enter_func: this.run_data_renew.enter_func,
+        params: this.run_data_renew.params,
       };
       axios
         .post("/update_module_info", params, headers)
         .then((response) => {
           console.log(response.data);
-          this.selected_row.package_name = this.run_data.package_name;
-          this.selected_row.enter_func = this.run_data.enter_func;
-          this.selected_row.params = this.run_data.params;
+          this.selected_row.package_name = this.run_data_renew.package_name;
+          this.selected_row.enter_func = this.run_data_renew.enter_func;
+          this.selected_row.params = this.run_data_renew.params;
+          this.showModal = false;
+          this.info(response.data);
         })
         .catch((error) => {
           console.log(error);
         });
     },
     run(row) {
-      console.log(row);
-
+      this.spinShow = true;
+      this.code = "";
       let headers = { "Content-Type": "application/json" };
       let params = row;
       axios
         .post("/run_module", params, headers)
         .then((response) => {
           console.log(response.data);
-          //this.queryAll();
+          this.code.JSON.stringify(response.data, null, 2);
+          this.spinShow = false;
         })
         .catch((error) => {
           console.log(error);
+          this.spinShow = false;
         });
     },
   },
 });
 </script>
+
+<style scoped>
+.hljs {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+</style>

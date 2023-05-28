@@ -1,4 +1,6 @@
 # coding:utf-8
+import shutil
+
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -94,7 +96,7 @@ def upload_module():
     zip_file = zipfile.ZipFile(file_path)
     timestamp = int(time.time())
     for file in zip_file.namelist():
-        zip_file.extract(file, f"../modules/{file_upload.filename}_{timestamp}")
+        zip_file.extract(file, f"../modules/{file_upload.filename.split('.')[0]}_{timestamp}")
     zip_file.close()
 
     os.remove(file_path)
@@ -105,7 +107,7 @@ def upload_module():
         "params": request.form["params"],
         "name": file_upload.filename,
         "upload_time": datetime.now(),
-        "package_path": f"{file_upload.filename}_{timestamp}"
+        "package_path": f"{file_upload.filename.split('.')[0]}_{timestamp}"
     }
     ModulesDao.insert(module_info)
 
@@ -130,8 +132,16 @@ def renew_package_info():
 @app.route("/delete_module", methods=["DELETE"])
 def delete_module():
     _id = request.args["id"]
-    print(_id)
+
+    module_info = ModulesDao.query_by_id(_id)
+    package_path = module_info.get("package_path")
+
+    shutil.rmtree(f"../modules/{package_path}")
+
+    ModulesDao.delete_by_id(_id)
+
     return "delete success!"
+
 
 @app.route("/query_all_modules", methods=["GET"])
 def query_all_modules():

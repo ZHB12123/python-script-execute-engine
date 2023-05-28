@@ -69,7 +69,7 @@ export default defineComponent({
           this.runCodeButtonDisable = false;
           this.spinShow = false;
         })
-        .catch(function (error) {
+        .catch((error) => {
           console.log(error);
           this.runCodeButtonDisable = false;
           this.spinShow = false;
