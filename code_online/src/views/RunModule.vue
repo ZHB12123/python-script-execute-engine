@@ -417,7 +417,7 @@ export default defineComponent({
         .post("/run_module", params, headers)
         .then((response) => {
           console.log(response.data);
-          this.code.JSON.stringify(response.data, null, 2);
+          this.code = JSON.stringify(response.data, null, 2);
           this.spinShow = false;
         })
         .catch((error) => {

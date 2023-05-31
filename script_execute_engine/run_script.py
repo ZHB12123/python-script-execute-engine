@@ -3,8 +3,19 @@ import sys
 import os
 import uuid
 
+import builtins
+
 original_lib_paths = sys.path.copy()
 original_lib_paths.remove(os.getcwd())
+
+user_log = ""
+
+
+def print_new(*args):
+    global user_log
+    for arg in args:
+        user_log += str(arg)+"\n"
+
 
 def load_module(module_name):
     before_load_modules = set(sys.modules.keys())
@@ -28,6 +39,8 @@ def load_module(module_name):
 
 
 def run(payload_dict, conn):
+    # 如果要替换builtins里面的函数应该这么换
+    builtins.print = print_new
     entrance_func_name = payload_dict.get("entrance_func")
     code = payload_dict.get("code")
 
@@ -41,9 +54,9 @@ def run(payload_dict, conn):
         execute_func = getattr(module, entrance_func_name, None)
         execute_result = execute_func()
 
-        conn.send({"result": execute_result, "new_modules": new_import_modules})
+        conn.send({"result": execute_result, "new_modules": new_import_modules, "log": user_log})
     except Exception as e:
-        conn.send({"result": str(e), "new_modules": []})
+        conn.send({"result": str(e), "new_modules": [], "log": user_log})
     finally:
         if os.path.exists(f"../scripts/{code_file_name}.py"):
             os.remove(f"../scripts/{code_file_name}.py")

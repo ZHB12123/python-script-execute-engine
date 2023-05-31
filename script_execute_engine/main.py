@@ -37,6 +37,7 @@ def execute_script():
         p.start()
         result = parent_conn.recv()
         execute_result = result.get("result")
+        execute_log = result.get("log")
         new_modules = result.get("new_modules")
         for module_name in new_modules:
             try:
@@ -48,9 +49,9 @@ def execute_script():
         p.kill()
         p.join()
 
-        return jsonify({"code": 0, "message": "success", "result": execute_result})
+        return jsonify({"code": 0, "message": "success", "result": execute_result, "log": execute_log})
     except Exception as e:
-        return jsonify({"code": 1, "message": "fail", "result": traceback.format_exc()})
+        return jsonify({"code": 1, "message": "fail", "result": traceback.format_exc(), "log": execute_log})
 
 
 @app.route("/run_module", methods=["POST"])
