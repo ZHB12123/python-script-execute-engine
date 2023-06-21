@@ -19,6 +19,8 @@ import run_script
 import run_module
 
 from db.dao import ModulesDao
+from flow_control_cache import CacheUtil
+from sqlite3_backend import LocalFlowControlDB
 
 sys.path.append("../scripts")
 sys.path.append("../modules")
@@ -27,6 +29,42 @@ ModulesDao.create_table()
 
 app = Flask(__name__)
 
+MAX_WAIT_TIME = 10000
+
+
+def wait_until_execute(key, interval):
+    """
+    流控实施函数
+    :param key:
+    :param interval:
+    :return:
+    """
+    is_get_lock = False
+    for i in range(10):
+        result = CacheUtil.try_get_execute_lock(key)
+        if result[0] == "WAITING":
+            is_get_lock = True
+            break
+        time.sleep(0.5)
+
+    if is_get_lock:
+        next_run_time = int(result[1])
+        now_time = result[2]
+
+        if next_run_time > now_time:
+            if next_run_time - now_time <= MAX_WAIT_TIME:
+                next_run_time = next_run_time + interval
+                CacheUtil.try_release_execute_lock(key, next_run_time)
+                time.sleep((next_run_time - now_time) / 1000)
+            else:
+                # 只释放分布式锁
+                CacheUtil.try_release_execute_lock(key, next_run_time)
+                raise Exception("Bucket overflow!!!")
+        else:
+            next_run_time = now_time + interval
+            CacheUtil.try_release_execute_lock(key, next_run_time)
+    else:
+        raise Exception("Can not get the lock! Reject to execute!")
 
 @app.route("/execute", methods=["POST"])
 def execute_script():
@@ -154,6 +192,8 @@ if __name__ == '__main__':
         multiprocessing.set_start_method("spawn")
     if os.name == "posix":
         multiprocessing.set_start_method("fork")
+
+    LocalFlowControlDB.create_flow_control_local_db()
 
     app.config['JSON_AS_ASCII'] = False
     # 以调试模式启动,host=0.0.0.0 ,则可以使用127.0.0.1、localhost以及本机ip来访问
