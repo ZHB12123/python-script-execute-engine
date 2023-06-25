@@ -35,8 +35,8 @@ MAX_WAIT_TIME = 10000
 def wait_until_execute(key, interval):
     """
     流控实施函数
-    :param key:
-    :param interval:
+    :param key: 如果说需要对不同的用户进行限流或者有其他场景的话，可以使用该key做区分
+    :param interval: 最短时间间隔，单位为毫秒
     :return:
     """
     is_get_lock = False
@@ -66,10 +66,13 @@ def wait_until_execute(key, interval):
     else:
         raise Exception("Can not get the lock! Reject to execute!")
 
+
 @app.route("/execute", methods=["POST"])
 def execute_script():
     payload_dict = json.loads(request.data.decode("utf-8"))
     try:
+        wait_until_execute("flow_control_all", 100)
+
         parent_conn, child_conn = multiprocessing.Pipe()
         p = multiprocessing.Process(target=run_script.run, args=(payload_dict, child_conn,))
         p.start()
